@@ -1,0 +1,140 @@
+---
+title: "**Fake News Detector By Naive Bayes Algorithm**"
+author: "Gayane Ohanjanyan, Nane Mambreyan, Hasmik Sahakyan"
+date: "April 21, 2024"
+output: pdf_document
+---
+
+
+```{r, echo=F, message=F, warning=F}
+# Load libraries
+library(ggplot2)
+library(wordcloud)
+library(dplyr)
+library(readr)
+```
+
+```{r, echo=F, message=F, warning=F}
+
+train_data <- read_csv("train_data_cleaned.csv")
+valid_data <- read_csv("val_data_cleaned.csv")
+test_data <- read_csv("test_data_cleaned.csv")
+
+```
+
+
+```{r, echo=F, message=F, warning=F}
+fake_data <- train_data %>%
+  filter(label == "fake")
+
+real_data <- train_data %>%
+  filter(label == "real")
+
+
+wordcloud(words = fake_data$clean_text, min.freq = 1,
+          max.words = 70, random.order = FALSE, colors = brewer.pal(8, "Dark2"),
+          main = "Word Cloud for 'fake' Label", aspect.ratio = 1, random.color = TRUE)  
+
+
+wordcloud(words = real_data$clean_text, min.freq = 1,
+          max.words = 70, random.order = FALSE, colors = brewer.pal(8, "Dark2"),
+          main = "Word Cloud for 'real' Label", aspect.ratio = 1, random.color = TRUE)
+```
+
+
+```{r, echo=F, message=F, warning=F}
+train_data$Dataset <- "Training Set"
+valid_data$Dataset <- "Validation Set"
+test_data$Dataset <- "Testing Set"
+
+combined_data <- rbind(train_data, valid_data, test_data)
+
+
+custom_colors <- c("Training Set" = "#4f4f78", "Validation Set" = "#996666", "Testing Set" = "#c1a3a3")
+
+ggplot(combined_data, aes(x = label, fill = factor(Dataset, 
+                                     levels = c("Training Set", "Validation Set", "Testing Set")))) +
+  geom_bar(position = "dodge") +
+  geom_text(stat = "count", aes(label = after_stat(count)), position = position_dodge(width = 0.9), 
+            vjust = -0.5) +
+  labs(title = "Number of Fake and Real News",
+       x = "Category of News",
+       y = "Number of News", 
+       fill = "Set Types") +
+  scale_fill_manual(values = custom_colors) +
+  theme_minimal() +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+```
+
+
+```{r, echo=F, message=F, warning=F}
+implement_table <- data.frame(
+  Model = c("GaussianNB Tf-Idf", 
+            "MultinomialNB Tf-Idf",
+            "GaussianNB Tf-Idf resampled", 
+            "MultinomialNB Tf-Idf resampled", 
+            "GaussianNB Count", 
+            "MultinomialNB Count", 
+            "GaussianNB Count resampled", 
+            "MultinomialNB Count resampled"),
+  
+  Package_Used = c(0.834, 0.939, 0.834, 0.939, 0.802, 0.933, 0.805, 0.934),
+  Our_Implementation = c(0.8209, 0.939, 0.816, 0.939, 0.767, 0.933, 0.756, 0.934)
+)
+implement_table$Model <- factor(implement_table$Model, levels = implement_table$Model)
+
+accuracy_table_long <- tidyr::pivot_longer(implement_table, cols = -Model, names_to = "Implement_Type", 
+                                           values_to = "Implement")
+
+heatmap <- ggplot(accuracy_table_long, aes(x = Model, y = Implement_Type, fill = Implement)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(Implement, 3)), color = "white", size = 4) +  # Add text labels with accuracy values
+  scale_fill_gradient(low = "#c1a3a3", high = "#4f4f78") +
+  labs(title = "Accuracy Heatmap on Validation set", x = "Model", y = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(heatmap)
+```
+
+
+```{r, echo=F, message=F, warning=F}
+implement_table <- data.frame(
+  Model = c("GaussianNB Tf-Idf", 
+            "MultinomialNB Tf-Idf",
+            "GaussianNB Tf-Idf resampled", 
+            "MultinomialNB Tf-Idf resampled", 
+            "GaussianNB Count", 
+            "MultinomialNB Count", 
+            "GaussianNB Count resampled", 
+            "MultinomialNB Count resampled"),
+  
+  Package_Used = c(0.8356361755578543 , 0.9405201714201271 , 0.8354145116004138, 0.9413329392640757 , 0.8034579577360721 , 0.9335377567607507 , 0.8054529333530368, 0.93468302054086),
+  Our_Implementation = c(0.8236293778631595 , 0.9405201714201271, 0.8193808186788828, 0.9413329392640757 , 0.7693955962760455 , 0.9335377567607507 , 0.7588296143047141, 0.93468302054086)
+)
+
+implement_table$Model <- factor(implement_table$Model, levels = implement_table$Model)
+
+accuracy_table_long <- tidyr::pivot_longer(implement_table, cols = -Model, names_to = "Implement_Type", 
+                                           values_to = "Implement")
+
+heatmap <- ggplot(accuracy_table_long, aes(x = Model, y = Implement_Type, fill = Implement)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(Implement, 3)), color = "white", size = 4) +  # Add text labels with accuracy values
+  scale_fill_gradient(low = "#c1a3a3", high = "#4f4f78") +
+  labs(title = "Accuracy Heatmap on Testing set", x = "Model", y = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(heatmap)
+```
+
+
+
+
+
+
+
+
+
